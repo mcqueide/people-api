@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:18-alpine3.22
+    container_name: db
+    restart: always
+    user: postgres
+    secrets:
+      - db-password
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    env_file:
+      - ./db/.env
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile-dev
+    working_dir: /app
+    #command: .mvnw -q spring-boot:run
+    container_name: people-api-dev
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    env_file:
+      - ./app/.env
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./:/app
+      - ~/.m2:/root/.m2
+    tty: true
+
+volumes:
+  db-data:
+secrets:
+  db-password:
+    file: db/password.txt

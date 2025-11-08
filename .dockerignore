@@ -10,7 +10,9 @@
 **/.env
 **/.factorypath
 **/.git
+**/.github
 **/.gitignore
+**/.gitattributes
 **/.idea
 **/.project
 **/.sts4-cache
@@ -30,7 +32,8 @@
 **/values.dev.yaml
 **/vendor
 LICENSE
-README.md
+README*.md
+HELP.md
 **/*.class
 **/*.iml
 **/*.ipr
@@ -60,3 +63,4 @@ pom.xml.tag
 pom.xml.versionsBackup
 release.properties
 replay_pid*
+**/db
