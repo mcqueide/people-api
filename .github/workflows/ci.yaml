@@ -10,9 +10,8 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  ci:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -33,19 +32,3 @@ jobs:
         env:
           # Ensure Testcontainers can use Docker in GitHub-hosted runner
           TESTCONTAINERS_CHECKS_DISABLE: true
-
-      - name: Upload test reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: surefire-reports
-          path: |
-            **/target/surefire-reports/*.xml
-            **/target/failsafe-reports/*.xml
-
-      - name: Upload packaged JAR
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: people-api-jar
-          path: target/*.jar
