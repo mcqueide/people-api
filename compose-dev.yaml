@@ -30,13 +30,20 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: docker
+      MAVEN_OPTS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
     env_file:
       - ./app/.env
     ports:
       - "8080:8080"
+      - "5005:5005"
     volumes:
-      - ./:/app
+#      - ./:/app
       - ~/.m2:/root/.m2
+    develop:
+      watch:
+        - action: sync+restart
+          path: .
+          target: /app
     tty: true
 
 volumes:

@@ -1,8 +1,19 @@
 # Dev runtime image — app runs via mvn spring-boot:run with source mounted
-FROM eclipse-temurin:21-jdk
+FROM eclipse-temurin:21-jdk-jammy
+
 WORKDIR /app
+
+COPY --chmod=0755 mvnw mvnw
+COPY .mvn/ .mvn/
+
+RUN --mount=type=bind,source=pom.xml,target=pom.xml \
+    --mount=type=cache,target=/root/.m2 ./mvnw dependency:go-offline -DskipTests
+
 ENV SPRING_PROFILES_ACTIVE=dev \
-JAVA_OPTS="-XX:+UseG1GC -XX:MaxRAMPercentage=75"
+    JAVA_OPTS="-XX:+UseG1GC -XX:MaxRAMPercentage=75"
+
+COPY --chown=app:app . .
+
 EXPOSE 8080
 # The command is provided by docker-compose.override.yml to allow overrides
 CMD ["sh", "-c", "./mvnw spring-boot:run"]
