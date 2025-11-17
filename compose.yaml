@@ -12,7 +12,11 @@ services:
     container_name: app
     build:
       context: .
-    image: people-api:0.0.1-SNAPSHOT
+    image: mcqueide/people-api:0.0.1-SNAPSHOT
+
+    cap_drop:
+      - ALL
+
     ports:
       - 8080:8080
     env_file:
@@ -40,7 +44,15 @@ services:
   db:
     image: postgres:18-alpine3.22
     container_name: db
-    restart: always
+    
+    cap_drop:
+      - ALL
+    
+    # security_opt:
+    #   - no-new-privileges:true # Prevenir escalação
+    #   - seccomp:seccomp-db-profile.json # Perfil seccomp customizado
+
+    #restart: always
     user: postgres
     secrets:
       - db-password
