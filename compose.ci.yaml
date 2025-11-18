@@ -37,6 +37,7 @@ services:
         reservations:
           cpus: '0.5'
           memory: 256M
+    tty: true
 
 # The commented out section below is an example of how to define a PostgreSQL
 # database that your application can use. `depends_on` tells Docker Compose to
@@ -59,7 +60,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: [ "CMD", "pg_isready -U people" ]
+      test: [ "CMD-SHELL", "pg_isready -U people" ]
       interval: 10s
       timeout: 5s
       retries: 5

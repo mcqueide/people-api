@@ -17,6 +17,9 @@ services:
     cap_drop:
       - ALL
 
+    security_opt:
+      - no-new-privileges:true # Prevenir escalação
+
     ports:
       - 8080:8080
     env_file:
@@ -48,9 +51,9 @@ services:
     cap_drop:
       - ALL
     
-    # security_opt:
-    #   - no-new-privileges:true # Prevenir escalação
-    #   - seccomp:seccomp-db-profile.json # Perfil seccomp customizado
+    security_opt:
+      - no-new-privileges:true # Prevenir escalação
+      # - seccomp:seccomp-db-profile.json # Perfil seccomp customizado
 
     #restart: always
     user: postgres
@@ -63,7 +66,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: [ "CMD", "pg_isready" ]
+      test: [ "CMD-SHELL", "pg_isready -U people" ]
       interval: 10s
       timeout: 5s
       retries: 5
