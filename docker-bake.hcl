@@ -1,10 +1,25 @@
-group "default" {
-  targets = [ "backend" ]
+variable "IMAGE_NAME" {
+  default = "mcqueide/people-api"
 }
 
-target "backend" {
+target "docker-metadata-action" {
+}
+
+group "default" {
+  targets = [ "prod" ]
+}
+
+target "prod" {
+    inherits = ["docker-metadata-action"]
     context = "."
     dockerfile = "Dockerfile"
-    tags = ["mcqueide/people-api:0.0.1-SNAPSHOT"]
+    tags = ["${IMAGE_NAME}:latest"]
     platforms = [ "linux/amd64", "linux/arm64" ]
+}
+
+target "ci"  {
+  context = "."
+  dockerfile = "Dockerfile"
+  tags = [ "${IMAGE_NAME}:ci" ]
+  target = "ci"
 }
