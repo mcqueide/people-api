@@ -12,7 +12,7 @@ services:
     container_name: app
     build:
       context: .
-    image: mcqueide/people-api:0.0.1-SNAPSHOT
+    image: mcqueide/people-api:latest
 
     cap_drop:
       - ALL
