@@ -46,7 +46,7 @@ jobs:
         uses: docker/build-push-action@v5.0.0
         with:
           context: .
-          file: ./Dockerfile
+          file: Dockerfile
           push: false
           load: true # driver docker-container
           target: ci
@@ -57,7 +57,7 @@ jobs:
         uses: docker/build-push-action@v5.0.0
         with:
           context: .
-          file: ./Dockerfile
+          file: Dockerfile
           push: false
           load: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SHA }}
@@ -109,7 +109,7 @@ jobs:
         uses: docker/build-push-action@v5.0.0
         with:
           context: .
-          file: ./Dockerfile
+          file: Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
