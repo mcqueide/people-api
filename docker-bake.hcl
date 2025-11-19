@@ -14,7 +14,6 @@ target "prod" {
     context = "."
     dockerfile = "./Dockerfile"
     tags = ["${IMAGE_NAME}:latest"]
-    platforms = [ "linux/amd64", "linux/arm64" ]
 }
 
 target "ci"  {
