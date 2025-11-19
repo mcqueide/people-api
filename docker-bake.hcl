@@ -12,14 +12,14 @@ group "default" {
 target "prod" {
     inherits = ["docker-metadata-action"]
     context = "."
-    dockerfile = "Dockerfile"
+    dockerfile = "./Dockerfile"
     tags = ["${IMAGE_NAME}:latest"]
     platforms = [ "linux/amd64", "linux/arm64" ]
 }
 
 target "ci"  {
   context = "."
-  dockerfile = "Dockerfile"
+  dockerfile = "./Dockerfile"
   tags = [ "${IMAGE_NAME}:ci" ]
   target = "ci"
 }
