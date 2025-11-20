@@ -2,30 +2,277 @@
 # If you need more help, visit the Docker Compose reference guide at
 # https://docs.docker.com/go/compose-spec-reference/
 
-# Here the instructions define your application as a service called "server".
+# Here the instructions define your application as a service called "app".
 # This service is built from the Dockerfile in the current directory.
 # You can add other services your application may depend on here, such as a
 # database or a cache. For examples, see the Awesome Compose repository:
 # https://github.com/docker/awesome-compose
+
+# ============================================================================
+# Docker Compose for Production
+# ============================================================================
+# This file consolidates all concepts learned in Production:
+# - Service configuration with healthchecks, restart policies and limits
+# - Secrets management
+# - Isolated networks and network security
+# - Volumes and persistence
+# - Log drivers
+# ============================================================================
+
+# ============================================================================
+# NETWORK CONFIGURATION
+# ============================================================================
+networks:
+  # Frontend network: exposed to the external world via nginx
+  frontend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+    # Labels for documentation
+    labels:
+      com.docker.compose.network: "frontend"
+      description: "Public network for nginx and external access"
+
+  # Backend network: isolated, internal communication only
+  backend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24
+    # Isolation: only app and database communicate
+    internal: true  # In real production, consider 'true' for total isolation
+    labels:
+      com.docker.compose.network: "backend"
+      description: "Private network for the app and database"
+
+# ============================================================================
+# VOLUME CONFIGURATION
+# ============================================================================
+volumes:
+  # ============================================================================
+  # Volume for PostgreSQL data
+  # ============================================================================
+  # IMPORTANT: In production, choosing the right storage is critical for performance,
+  # availability and backups of the database.
+  #
+  # OPTION 1: Native Docker Volume (CURRENT - Recommended for single-node)
+  # Better performance, Docker-managed, proper isolation
+  db-data:
+    driver: local
+    # Docker automatically manages at /var/lib/docker/volumes/
+    # Advantages:
+    # - Better performance (optimized by Docker)
+    # - Automatic permission handling
+    # - Integration with backup plugins
+    # - Portability between environments
+    labels:
+      description: "Persistent PostgreSQL data"
+      backup: "daily"
+      critical: "true"
+
+  # OPTION 2: Bind Mount with absolute path
+  # Use when you need full control over storage location
+  # db-data:
+  #   driver: local
+  #   driver_opts:
+  #     type: none
+  #     o: bind
+  #     device: /var/lib/docker-volumes/postgres  # ABSOLUTE path
+  #   # Advantages:
+  #   # - Full control over location (e.g., mount on dedicated SSD/NVMe)
+  #   # - Easier automated backups using external scripts
+  #   # - Useful for compliance (auditing physical data location)
+  #   labels:
+  #     description: "Persistent PostgreSQL data"
+  
+  # OPTION 3: NFS - Network File System (Ideal for clusters/high availability)
+  # Use in distributed environments where multiple nodes need access to data
+  # file_storage:
+  #   driver: local
+  #   driver_opts:
+  #     type: nfs
+  #     o: addr=192.168.1.100,rw,nfsvers=4.1,hard,intr
+  #     device: ":/mnt/nfs/file_storage"
+  #   # Advantages:
+  #   # - Shared storage across multiple nodes
+  #   # - Enables failover and high availability
+  #   # - Centralized backup on storage server
+  #   # - Horizontal scalability
+  #   # Disadvantages:
+  #   # - Network latency (performance impact)
+  #   # - Dependency on the NFS server (single point of failure)
+  #   # - Requires additional security configuration
+  #   labels:
+  #     description: "File storage over NFS"
+
+  # OPTION 4: Block Storage (AWS EBS, DigitalOcean Volumes, GCP Persistent Disks)
+  # Use in cloud environments with managed high-performance volumes
+  # db-data:
+  #   driver: local
+  #   driver_opts:
+  #     type: none
+  #     o: bind
+  #     device: /mnt/block-storage/postgres  # Mounted external volume
+  #   # PRE-REQUISITE: Mount the block storage volume on the host first:
+  #   # sudo mkdir -p /mnt/block-storage
+  #   # sudo mount /dev/disk/by-id/scsi-0DO_Volume_postgres-vol /mnt/block-storage
+  #   #
+  #   # Advantages:
+  #   # - Guaranteed performance (dedicated IOPS)
+  #   # - Automatic backup snapshots
+  #   # - Dynamic size expansion
+  #   # - Instance migration (attach/detach)
+  #   # - Cloud provider availability SLA
+  #   # Disadvantages:
+  #   # - Additional costs per GB/IOPS
+  #   # - Limited to a single availability zone
+  #   # - Requires cloud provider configuration
+  #   labels:
+  #     description: "Persistent PostgreSQL data via Block Storage"
+
+  # Volume for application logs
+  # PRODUCTION: Docker-managed volume (safer and more portable)
+  app-logs:
+    driver: local
+    labels:
+      description: "Node.js application logs"
+
+# ============================================================================
+# SECRETS
+# ============================================================================
+# Docker secrets (requires Swarm mode for native secrets)
+# For dev/production without Swarm, external files are used
+secrets:
+  db-password:
+    file: ./secrets/db-password.txt
+  db-user:
+    file: ./secrets/db-user.txt
+
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
+# .env file is automatically loaded
+# Variables may be replaced using ${VARIABLE:-default}
+
+# ============================================================================
+# SERVICES
+# ============================================================================
 services:
+
+  # ============================================================================
+  # NGINX - Reverse Proxy
+  # ============================================================================
+  nginx:
+    image: nginx:1.29-alpine
+    container_name: production_nginx
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Networks: connected to frontend (external) and backend (app)
+    networks:
+      - frontend
+      - backend
+    
+    # Exposed ports
+    ports:
+      - "80:80"
+    
+    # Volumes
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - ./nginx/html:/usr/share/nginx/html:ro
+    
+    # Dependencies
+    depends_on:
+      app:
+        condition: service_started  # Changed from service_healthy because it doesn't work properly with multiple replicas
+    
+    # Healthcheck
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service,tier,environment"
+        tag: "nginx"
+    
+    # Labels for organization
+    labels:
+      service: "nginx"
+      tier: "frontend"
+      environment: "${ENVIRONMENT:-production}"
+
+  # ==========================================================================
+  # SPRING-BOOT APPLICATION
+  # ==========================================================================
   app:
-    container_name: app
     build:
       context: .
+      dockerfile: Dockerfile
     image: mcqueide/people-api:latest
 
+    # Drop all capabilities (principle of least privilege)
     cap_drop:
       - ALL
 
+    # Security options
     security_opt:
-      - no-new-privileges:true # Prevenir escalação
+      - no-new-privileges:true # Prevent escalation
 
-    ports:
-      - 8080:8080
+    # User namespace (security best practice)
+    # user: "spring:spring"  # Uncomment if image supports it
+
+    # Restart policy
+    restart: unless-stopped
+
+    # Networks: backend (db)
+    networks:
+      - backend
+
+    # Ports (not externally exposed, only through nginx)
+    expose:
+      - "8080"
+    
+    # Not required, docker uses .env by default
     env_file:
-      - ./app/.env
+      - .env
+
     secrets:
       - db-password
+      - db-user
+
+    # Volumes
+    volumes:
+      - app-logs:/app/logs
+
+    # Dependencies
+    depends_on:
+      db:
+        condition: service_healthy
+
+    # Resource limits
     deploy:
       resources:
         limits:
@@ -34,16 +281,38 @@ services:
         reservations:
           cpus: '0.5'
           memory: 256M
+      # Replica configuration (2 application instances)
+      # Note: deploy.replicas is fully supported only in Docker Swarm
+      # For Compose standalone, use: docker compose up -d --scale app=2
+      replicas: 2
+      # Configurations below only work in Docker Swarm:
+      # update_config:
+      #   parallelism: 1
+      #   delay: 10s
+      #   order: start-first
+      # rollback_config:
+      #   parallelism: 1
+      #   delay: 5s
 
-# The commented out section below is an example of how to define a PostgreSQL
-# database that your application can use. `depends_on` tells Docker Compose to
-# start the database before your application. The `db-data` volume persists the
-# database data between container restarts. The `db-password` secret is used
-# to set the database password. You must create `db/password.txt` and add
-# a password of your choosing to it before running `docker-compose up`.
-    depends_on:
-      db:
-        condition: service_healthy
+    # Structured logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+        labels: "service,tier,environment"
+        tag: "{{.Name}}/{{.ID}}"
+    
+    # Labels
+    labels:
+      service: "app"
+      tier: "backend"
+      environment: "${ENVIRONMENT:-production}"
+      version: "${APP_VERSION:-1.0.0}"
+
+  # ==========================================================================
+  # POSTGRESQL - Database
+  # ==========================================================================
   db:
     image: postgres:18-alpine3.22
     container_name: db
@@ -51,27 +320,119 @@ services:
     cap_drop:
       - ALL
     
+    # Security
     security_opt:
       - no-new-privileges:true # Prevenir escalação
       # - seccomp:seccomp-db-profile.json # Perfil seccomp customizado
 
-    #restart: always
-    user: postgres
+    # restart: unless-stopped
+
+    # Isolated backend network
+    networks:
+      - backend
+
+    # Ports: DO NOT expose externally in production
+    # ports:
+    #   - "5432:5432"  # ❌ For debug only, remove in production
+    
+    expose:
+      - "5432"
+
+    # user: postgres
+
+    # Secrets
     secrets:
       - db-password
+      - db-user
+
+    # Persistent volumes
     volumes:
       - db-data:/var/lib/postgresql/data
+    
+    # Not required, docker uses .env by default
     env_file:
-      - ./db/.env
-    ports:
-      - "5432:5432"
+      - .env
+
+    # OPTIMIZATION: Use tmpfs for temporary data (improves performance)
+    # Sockets and temp files don't require persistence
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql  # Unix socket in memory for better performance
+
+    # Healthcheck
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U people" ]
+      test: [ "CMD-SHELL", "pg_isready -U -U $$(cat /run/secrets/db-user) -d ${POSTGRES_DB:-people}" ]
       interval: 10s
       timeout: 5s
       retries: 5
-volumes:
-  db-data:
-secrets:
-  db-password:
-    file: db/password.txt
+      start_period: 30s
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '1.0'
+          memory: 512M
+
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+        tag: "postgres"
+
+    # Labels
+    labels:
+      service: "postgres"
+      tier: "database"
+
+    # Shared memory size (important for PostgreSQL)
+    shm_size: 256mb
+
+# ============================================================================
+# INITIALIZATION
+# ============================================================================
+# 
+# To start the application:
+#   docker compose up -d
+#
+# To start specific services:
+#   docker compose up -d app postgres nginx
+#
+# ============================================================================
+
+# ============================================================================
+# USEFUL COMMANDS
+# ============================================================================
+#
+# Deploy with minimal downtime:
+#   docker compose up -d --no-deps --build app
+#
+# Check service health:
+#   docker compose ps
+#   docker compose exec app node healthcheck.js
+#
+# Logs:
+#   docker compose logs -f app
+#   docker compose logs --tail=100 postgres
+#
+# Database backup:
+#   docker compose exec postgres pg_dump -U $(cat secrets/db-user.txt) appdb > backup.sql
+#
+# Database restore:
+#   docker compose exec -T postgres psql -U $(cat secrets/db-user.txt) appdb < backup.sql
+#
+# Inspect PostgreSQL volume:
+#   docker volume inspect production_postgres_data
+#
+# Locate volume data:
+#   docker volume inspect production_postgres_data | grep Mountpoint
+#
+# Docker volume backup:
+#   docker run --rm -v production_postgres_data:/data -v $(pwd):/backup alpine tar czf /backup/postgres_backup.tar.gz -C /data .
+#
+# ============================================================================
