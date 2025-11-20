@@ -64,3 +64,4 @@ pom.xml.versionsBackup
 release.properties
 replay_pid*
 **/db
+!**/db/migration

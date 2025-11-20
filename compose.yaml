@@ -165,7 +165,7 @@ services:
   # ============================================================================
   nginx:
     image: nginx:1.29-alpine
-    container_name: production_nginx
+    container_name: nginx
     
     # Restart policy
     restart: unless-stopped
@@ -314,11 +314,8 @@ services:
   # POSTGRESQL - Database
   # ==========================================================================
   db:
-    image: postgres:18-alpine3.22
+    image: postgres:17-alpine3.22
     container_name: db
-    
-    cap_drop:
-      - ALL
     
     # Security
     security_opt:
@@ -338,7 +335,7 @@ services:
     expose:
       - "5432"
 
-    # user: postgres
+    user: postgres
 
     # Secrets
     secrets:
@@ -361,7 +358,7 @@ services:
 
     # Healthcheck
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U -U $$(cat /run/secrets/db-user) -d ${POSTGRES_DB:-people}" ]
+      test: [ "CMD-SHELL", "pg_isready -U $$(cat /run/secrets/db-user) -d ${POSTGRES_DB:-people}" ]
       interval: 10s
       timeout: 5s
       retries: 5
