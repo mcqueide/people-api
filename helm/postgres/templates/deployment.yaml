@@ -1,49 +1,48 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: people-api-postgres
+  name: {{ .Release.Name }}-db
   labels:
-    app: people-api-postgres
+    app: {{ .Release.Name }}-db
 spec:
   selector:
     matchLabels:
-      app: people-api-postgres
+      app: {{ .Release.Name }}-db
   template:
     metadata:
       labels:
-        app: people-api-postgres
+        app: {{ .Release.Name }}-db
     spec:
       containers:
         - name: db
-          image: postgres:17-alpine3.22
+          image: {{ .Values.container.image.repository }}:{{ .Values.container.image.tag }}
           ports:
             - containerPort: 5432
-              name: postgres
-          resources:
-            requests:
-              memory: "256Mi"
-              cpu: "250m"
-            limits:
-              memory: "512Mi"
-              cpu: "500m"
           env:
             - name: POSTGRES_DB
               valueFrom:
                 secretKeyRef:
-                  name: people-api-postgres-secret
+                  name: {{ .Release.Name }}-db-secret
                   key: POSTGRES_DB
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
-                  name: people-api-postgres-secret
+                  name: {{ .Release.Name }}-db-secret
                   key: POSTGRES_USER
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: people-api-postgres-secret
+                  name: {{ .Release.Name }}-db-secret
                   key: POSTGRES_PASSWORD
+          resources:
+            requests:
+              memory: {{ .Values.container.resources.requests.memory }}
+              cpu: {{ .Values.container.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.container.resources.limits.memory }}
+              cpu: {{ .Values.container.resources.limits.cpu }}
           volumeMounts:
-            - name: postgres-storage
+            - name: {{ .Release.Name }}-storage
               mountPath: /var/lib/postgresql/data
           startupProbe:
             exec:
@@ -68,7 +67,6 @@ spec:
                 - pg_isready -U "$(POSTGRES_USER:-postgres)"
             periodSeconds: 20
       volumes:
-        - name: postgres-storage
+        - name: {{ .Release.Name }}-storage
           persistentVolumeClaim:
-            claimName: postgres-pvc
-        
+            claimName: {{ .Release.Name }}-pvc

@@ -1,0 +1,25 @@
+apiVersion: v1
+pvc:
+  accessMode: ReadWriteOnce
+  size: 1Gi
+container:
+  image:
+    repository: postgres
+    tag: 17-alpine3.22
+  storage:
+    size: 1Gi
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+    limits:
+      cpu: "1"
+      memory: "1Gi"
+  service:
+    type: ClusterIP
+    port: 5432
+    targetPort: 5432
+  environment:
+    POSTGRES_DB: cGVvcGxl
+    POSTGRES_USER: cGVvcGxl
+    POSTGRES_PASSWORD: cGVvcGxl
