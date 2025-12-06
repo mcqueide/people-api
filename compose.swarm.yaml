@@ -279,7 +279,7 @@ services:
   # SPRING-BOOT APPLICATION
   # ==========================================================================
   app:
-    image: mcqueide/people-api:0656d89
+    image: mcqueide/people-api:v1.0.0
 
     # Networks: backend (app, db) and frontend (nginx)
     networks:
