@@ -9,9 +9,9 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.mcqueide</groupId>
-    <artifactId>docker-test</artifactId>
+    <artifactId>people-api</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>docker-test</name>
+    <name>people-api</name>
     <description>Demo project for Spring Boot</description>
     <url/>
     <licenses>
