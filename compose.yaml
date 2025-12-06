@@ -317,6 +317,17 @@ services:
     image: postgres:17-alpine3.22
     container_name: db
     
+    # Drop all capabilities (principle of least privilege)
+    cap_drop:
+      - ALL
+    # Add only required capabilities
+    cap_add:
+      - CAP_CHOWN
+      - CAP_FOWNER
+      - CAP_DAC_OVERRIDE
+      - CAP_SETUID
+      - CAP_SETGID
+
     # Security
     security_opt:
       - no-new-privileges:true # Prevenir escalação

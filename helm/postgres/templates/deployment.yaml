@@ -68,6 +68,15 @@ spec:
             periodSeconds: 20
           securityContext:
             allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - CHOWN
+                - FOWNER
+                - DAC_OVERRIDE
+                - SETUID
+                - SETGID
       volumes:
         - name: {{ .Release.Name }}-storage
           persistentVolumeClaim:
