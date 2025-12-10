@@ -1,28 +1,54 @@
 spring:
   application:
     name: people-api
+  
   datasource:
-    url: jdbc:postgresql://localhost:5432/people
-    username: people
-    password: people
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/people}
+    username: ${SPRING_DATASOURCE_USERNAME:people}
+    password: ${SPRING_DATASOURCE_PASSWORD:people}
+  
   jpa:
     hibernate:
       ddl-auto: validate
+    show-sql: false
     properties:
       hibernate.format_sql: true
       hibernate.jdbc.time_zone: UTC
+
   flyway:
     enabled: true
     locations: classpath:db/migration
 
+# CORS Configuration
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:4200}
+  allowcredentials: ${CORS_ALLOWCREDENTIALS:true}
+
+# Server Configuration
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# Actuator Configuration
 management:
   endpoints:
     web:
       exposure:
-        include: '*'
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
 
-server:
-  port: 8080
+# API Documentation
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
 
 ---
 

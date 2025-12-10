@@ -188,7 +188,7 @@ services:
     
     # Dependencies
     depends_on:
-      app:
+      api:
         condition: service_started  # Changed from service_healthy because it doesn't work properly with multiple replicas
     
     # Healthcheck
@@ -227,7 +227,7 @@ services:
   # ==========================================================================
   # SPRING-BOOT APPLICATION
   # ==========================================================================
-  app:
+  api:
     build:
       context: .
       dockerfile: Dockerfile
@@ -250,6 +250,10 @@ services:
     # Networks: backend (db)
     networks:
       - backend
+
+    # Ports: DO NOT expose externally in production
+    # ports:
+    #   - "8080:8080"  # ❌ For debug only, remove in production
 
     # Ports (not externally exposed, only through nginx)
     expose:
@@ -305,10 +309,10 @@ services:
     
     # Labels
     labels:
-      service: "app"
+      service: "api"
       tier: "backend"
       environment: "${ENVIRONMENT:-production}"
-      version: "${APP_VERSION:-1.0.0}"
+      version: "${API_VERSION:-1.0.0}"
 
   # ==========================================================================
   # POSTGRESQL - Database

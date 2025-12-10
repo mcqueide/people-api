@@ -5,11 +5,12 @@ services:
     restart: always
     user: postgres
     secrets:
+      - db-user
       - db-password
     volumes:
       - db-data:/var/lib/postgresql/data
     env_file:
-      - ./db/.env
+      - .env
     ports:
       - "5432:5432"
     healthcheck:
@@ -32,7 +33,7 @@ services:
       SPRING_PROFILES_ACTIVE: docker
       MAVEN_OPTS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
     env_file:
-      - ./app/.env
+      - .env
     ports:
       - "8080:8080"
       - "5005:5005"
@@ -50,4 +51,6 @@ volumes:
   db-data:
 secrets:
   db-password:
-    file: db/password.txt
+    file: secrets/db-password.txt
+  db-user:
+    file: ./secrets/db-user.txt
