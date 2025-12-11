@@ -35,3 +35,8 @@ build/
 ### Docker ###
 .env
 secrets/*.txt
+
+### Kubernetes ###
+values.y*ml
+secret.y*ml
+env.y*ml
