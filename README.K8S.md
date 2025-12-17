@@ -86,6 +86,39 @@ http://localhost/ → frontend
 
 **No port-forward needed** - the Kind cluster maps container ports 80/443 to your host!
 
+## Install NGINX Ingress Controller on Cloud
+
+1. Install NGINX Ingress Controller.
+
+```
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.0/deploy/static/provider/do/deploy.yaml
+```
+
+2. Wait for LoadBalancer to provision.
+```
+kubectl wait --namespace ingress-nginx \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/component=controller \
+  --timeout=120s
+```
+
+3. Ensure services exist, people-api and people-frontend.
+
+4. After the LoadBalancer is created, get its external IP.
+
+```
+kubectl get svc -n ingress-nginx
+```
+
+5. Point your domain's A record to this IP.
+
+## Kubectl Help Cheat Sheet
+
+```
+# Test directly to the service (bypassing ingress)
+kubectl run curl-test --rm -it --image=curlimages/curl --restart=Never -- curl http://people-api:8080/api-docs
+```
+
 ## Install Helm
 
 1. Follow the [Helm installation guide](https://helm.sh/docs/intro/install/).

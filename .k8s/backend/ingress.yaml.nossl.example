@@ -2,12 +2,10 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: people-api-ingress
-  annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt"
-    ingress.kubernetes.io/ssl-redirect: "true"
 spec:
   ingressClassName: nginx
   rules:
+  # Add your host here, or use localhost for local testing.
   - host: people.mcqueide.com
     http:
       paths:
@@ -46,7 +44,3 @@ spec:
             name: people-frontend
             port:
               number: 3000
-  tls:
-  - hosts:
-    - people.mcqueide.com
-    secretName: letsencrypt-tls
