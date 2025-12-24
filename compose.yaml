@@ -457,7 +457,13 @@ services:
     env_file:
       - .env
     
+    volumes:
+      - ./keycloak/export:/opt/keycloak/data/import
+
     command: start-dev
+    
+    # Run import
+    # command: start-dev --import-realm  # Add --import-realm flag to import on startup
     
     depends_on:
       db:
@@ -489,6 +495,34 @@ services:
       service: "keycloak"
       tier: "backend"
       environment: "${ENVIRONMENT:-production}"
+
+  # ==========================================================================
+  # KEYCLOAK EXPORT - One-time configuration export
+  # ==========================================================================
+  keycloak-export:
+    image: quay.io/keycloak/keycloak:26.4
+    container_name: keycloak-export
+    profiles:
+      - export  # Only runs when explicitly called
+    
+    networks:
+      - backend
+    
+    secrets:
+      - keycloak-db-password
+      - keycloak-admin-password
+    
+    env_file:
+      - .env
+    
+    volumes:
+      - ./keycloak/export:/opt/keycloak/data/import:rw
+    
+    command: export --dir /opt/keycloak/data/import --users realm_file
+    
+    depends_on:
+      db:
+        condition: service_healthy
 
 # ============================================================================
 # INITIALIZATION
