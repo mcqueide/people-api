@@ -146,8 +146,12 @@ volumes:
 secrets:
   db-password:
     file: ./secrets/db-password.txt
-  db-user:
-    file: ./secrets/db-user.txt
+  api-db-password:
+    file: ./secrets/api-db-password.txt
+  keycloak-db-password:
+    file: ./secrets/keycloak-db-password.txt
+  keycloak-admin-password:
+    file: ./secrets/keycloak-admin-password.txt
 
 # ============================================================================
 # CONFIGURATION
@@ -266,7 +270,7 @@ services:
 
     # Ports: DO NOT expose externally in production
     # ports:
-    #   - "8080:8080"  # ❌ For debug only, remove in production
+    #   - "8081:8080"  # ❌ For debug only, remove in production
 
     # Ports (not externally exposed, only through nginx)
     expose:
@@ -277,8 +281,7 @@ services:
       - .env
 
     secrets:
-      - db-password
-      - db-user
+      - api-db-password
 
     # Volumes
     volumes:
@@ -287,6 +290,8 @@ services:
     # Dependencies
     depends_on:
       db:
+        condition: service_healthy
+      keycloak:
         condition: service_healthy
 
     # Resource limits
@@ -368,11 +373,13 @@ services:
     # Secrets
     secrets:
       - db-password
-      - db-user
+      - keycloak-db-password
+      - api-db-password
 
     # Persistent volumes
     volumes:
       - db-data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro  # Initialization scripts
     
     # Not required, docker uses .env by default
     env_file:
@@ -386,7 +393,7 @@ services:
 
     # Healthcheck
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U $$(cat /run/secrets/db-user) -d ${POSTGRES_DB:-people}" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -417,6 +424,71 @@ services:
 
     # Shared memory size (important for PostgreSQL)
     shm_size: 256mb
+
+  # ==========================================================================
+  # KEYCLOAK - Identity and Access Management
+  # ==========================================================================
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.4
+    container_name: keycloak
+    
+    cap_drop:
+      - ALL
+    
+    security_opt:
+      - no-new-privileges:true
+    
+    restart: unless-stopped
+    
+    networks:
+      - backend
+    
+    expose:
+      - "8080"
+
+    # Ports: DO NOT expose externally in production
+    # ports:
+    #   - "8080:8080"  # ❌ For debug only, remove in production
+    
+    secrets:
+      - keycloak-db-password
+      - keycloak-admin-password
+
+    env_file:
+      - .env
+    
+    command: start-dev
+    
+    depends_on:
+      db:
+        condition: service_healthy
+    
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/keycloak/9000 && echo -e 'GET /health/ready HTTP/1.1\r\nHost: keycloak\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | grep -q '200 OK'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s  # Keycloak takes time to initialize
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    
+    labels:
+      service: "keycloak"
+      tier: "backend"
+      environment: "${ENVIRONMENT:-production}"
 
 # ============================================================================
 # INITIALIZATION

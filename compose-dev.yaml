@@ -1,41 +1,83 @@
+name: people-dev
+
+networks:
+  backend:
+    driver: bridge
+
 services:
   db:
     image: postgres:18-alpine3.22
-    container_name: db
     restart: always
     user: postgres
     secrets:
-      - db-user
       - db-password
+      - keycloak-db-password
+      - api-db-password
     volumes:
       - db-data:/var/lib/postgresql/data
-    env_file:
-      - .env
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro  # Initialization scripts
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     healthcheck:
-      test: [ "CMD", "pg_isready" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 3
+    networks:
+      - backend
 
-  app:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.4
+    command: start-dev
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+      - "9000:9000"  # Admin health endpoint
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: localhost
+      KC_PROXY_HEADERS: xforwarded
+      KC_HEALTH_ENABLED: true
+      KC_METRICS_ENABLED: true
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/keycloak/9000 && echo -e 'GET /health/ready HTTP/1.1\r\nHost: keycloak\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | grep -q '200 OK'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s  # Keycloak takes time to initialize
+    networks:
+      - backend
+
+  api:
     build:
       context: .
       dockerfile: Dockerfile-dev
     working_dir: /app
     #command: .mvnw -q spring-boot:run
-    container_name: people-api-dev
     depends_on:
       db:
         condition: service_healthy
+      keycloak:
+        condition: service_healthy
     environment:
-      SPRING_PROFILES_ACTIVE: docker
       MAVEN_OPTS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
-    env_file:
-      - .env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/people
+      SPRING_DATASOURCE_USERNAME: people
+      SPRING_DATASOURCE_PASSWORD: people
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/people-realm
     ports:
-      - "8080:8080"
+      - "8081:8080"
       - "5005:5005"
     volumes:
 #      - ./:/app
@@ -46,11 +88,15 @@ services:
           path: .
           target: /app
     tty: true
+    networks:
+      - backend
 
 volumes:
   db-data:
 secrets:
   db-password:
-    file: secrets/db-password.txt
-  db-user:
-    file: ./secrets/db-user.txt
+    file: ./secrets/db-password.txt
+  api-db-password:
+    file: ./secrets/api-db-password.txt
+  keycloak-db-password:
+    file: ./secrets/keycloak-db-password.txt
