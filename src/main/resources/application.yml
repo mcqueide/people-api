@@ -56,6 +56,12 @@ server:
   error:
     include-message: always
     include-binding-errors: always
+  forward-headers-strategy: framework
+  tomcat:
+    remoteip:
+      remote-ip-header: x-forwarded-for
+      protocol-header: x-forwarded-proto
+      port-header: x-forwarded-port
 
 # Actuator Configuration
 management:
@@ -93,5 +99,11 @@ spring:
 # Server Configuration
 server:
   port: 8080
+  forward-headers-strategy: framework
+  tomcat:
+    remoteip:
+      remote-ip-header: x-forwarded-for
+      protocol-header: x-forwarded-proto
+      port-header: x-forwarded-port
 
 issuer-uri: ${KEYCLOAK_ISSUER_URI:http://keycloak:8080/auth/realms/people-realm}

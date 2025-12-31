@@ -88,6 +88,9 @@ RUN adduser \
     --no-create-home \
     --uid "${UID}" \
     appuser
+
+RUN chown -R appuser:appuser /opt/java/openjdk
+
 USER appuser
 
 WORKDIR /application
@@ -95,11 +98,14 @@ WORKDIR /application
 ENV JAVA_OPTS="-Xms128m -Xmx256m"
 
 # Copy the executable from the "package" stage.
-COPY --from=extract build/target/extracted/dependencies/ ./
-COPY --from=extract build/target/extracted/spring-boot-loader/ ./
-COPY --from=extract build/target/extracted/snapshot-dependencies/ ./
-COPY --from=extract build/target/extracted/application/ ./
+COPY --from=extract --chown=appuser:appuser build/target/extracted/dependencies/ ./
+COPY --from=extract --chown=appuser:appuser build/target/extracted/spring-boot-loader/ ./
+COPY --from=extract --chown=appuser:appuser build/target/extracted/snapshot-dependencies/ ./
+COPY --from=extract --chown=appuser:appuser build/target/extracted/application/ ./
+
+# Copy certificate import script
+COPY --chown=appuser:appuser docker-entrypoint.sh /docker-entrypoint.sh
 
 EXPOSE 8080
 
-CMD [ "sh", "-c", "java $JAVA_OPTS -jar app.jar" ]
+ENTRYPOINT ["/docker-entrypoint.sh"]

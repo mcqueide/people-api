@@ -214,6 +214,7 @@ services:
     # Exposed ports
     ports:
       - "80:80"
+      - "443:443"
     
     # Volumes
     volumes:
@@ -307,6 +308,7 @@ services:
     # Volumes
     volumes:
       - app-logs:/app/logs
+      - ./nginx/certs:/certs:ro
 
     # Dependencies
     depends_on:
