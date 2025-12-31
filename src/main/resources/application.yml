@@ -43,7 +43,7 @@ spring:
             jwk-set-uri: ${issuer-uri}/protocol/openid-connect/certs
             user-name-attribute: preferred_username
 
-issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/auth/realms/people-realm}
+issuer-uri: ${KEYCLOAK_ISSUER_URI:http://keycloak:8080/auth/realms/people-realm}
 
 # CORS Configuration
 cors:
