@@ -138,6 +138,22 @@ volumes:
     labels:
       description: "Spring Boot application logs"
 
+  # Volume for Keycloak data (build configuration and cache)
+  keycloak-conf:
+    driver: local
+    labels:
+      description: "Keycloak build configuration"
+      backup: "recommended"
+      critical: "false"
+
+  # Volume for Keycloak runtime data (cache, temporary files)
+  keycloak-lib:
+    driver: local
+    labels:
+      description: "Keycloak runtime data"
+      backup: "recommended"
+      critical: "false"
+
 # ============================================================================
 # SECRETS
 # ============================================================================
@@ -170,7 +186,7 @@ services:
   nginx:
     image: nginx:1.29-alpine
     container_name: nginx
-    
+
     # Drop all capabilities (principle of least privilege)
     cap_drop:
       - ALL
@@ -183,6 +199,9 @@ services:
     # Security options
     security_opt:
       - no-new-privileges:true # Prevent escalation
+
+    env_file:
+      - env_files/.env.nginx
 
     # Restart policy
     restart: unless-stopped
@@ -268,6 +287,9 @@ services:
     networks:
       - backend
 
+    extra_hosts:
+      - "mcqueide.local:172.21.0.1"
+
     # Ports: DO NOT expose externally in production
     # ports:
     #   - "8081:8080"  # ❌ For debug only, remove in production
@@ -276,9 +298,8 @@ services:
     expose:
       - "8080"
     
-    # Not required, docker uses .env by default
     env_file:
-      - .env
+      - env_files/.env.api
 
     secrets:
       - api-db-password
@@ -383,7 +404,7 @@ services:
     
     # Not required, docker uses .env by default
     env_file:
-      - .env
+      - env_files/.env.db
 
     # OPTIMIZATION: Use tmpfs for temporary data (improves performance)
     # Sockets and temp files don't require persistence
@@ -393,7 +414,7 @@ services:
 
     # Healthcheck
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -455,11 +476,15 @@ services:
       - keycloak-admin-password
 
     env_file:
-      - .env
+      - env_files/.env.keycloak
     
     volumes:
+      - keycloak-conf:/opt/keycloak/conf
+      - keycloak-lib:/opt/keycloak/lib/quarkus/
       - ./keycloak/export:/opt/keycloak/data/import
 
+    # NOTE: Use 'start' for production (builds automatically on first run)
+    # After first successful build, you can optionally use 'start --optimized' for faster restarts
     command: start-dev
     
     # Run import
@@ -470,7 +495,7 @@ services:
         condition: service_healthy
     
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/keycloak/9000 && echo -e 'GET /health/ready HTTP/1.1\r\nHost: keycloak\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | grep -q '200 OK'"]
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/keycloak/9000 && echo -e 'GET /auth/health/ready HTTP/1.1\r\nHost: keycloak\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | grep -q '200 OK'"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -480,10 +505,10 @@ services:
       resources:
         limits:
           cpus: '0.5'
-          memory: 512M
+          memory: 768M
         reservations:
           cpus: '0.25'
-          memory: 256M
+          memory: 512M
     
     logging:
       driver: "json-file"
@@ -513,7 +538,7 @@ services:
       - keycloak-admin-password
     
     env_file:
-      - .env
+      - env_files/.env.keycloak
     
     volumes:
       - ./keycloak/export:/opt/keycloak/data/import:rw
@@ -542,10 +567,6 @@ services:
 #
 # Deploy with minimal downtime:
 #   docker compose up -d --no-deps --build app
-#
-# Check service health:
-#   docker compose ps
-#   docker compose exec app node healthcheck.js
 #
 # Logs:
 #   docker compose logs -f app

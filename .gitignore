@@ -34,7 +34,12 @@ build/
 
 ### Docker ###
 .env
+.env.api
+.env.db
+.env.keycloak
+.env.nginx
 secrets/*.txt
+
 
 ### Kubernetes ###
 values.y*ml
