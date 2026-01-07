@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-init-scripts
+  labels:
+    app: {{ .Release.Name }}-db
+data:
+  {{- (.Files.Glob "files/init/*.sh").AsConfig | nindent 2 }}

@@ -268,7 +268,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: mcqueide/people-api:v1.0.0
+    image: mcqueide/people-api:v1.0.1
 
     # Drop all capabilities (principle of least privilege)
     cap_drop:
@@ -293,11 +293,11 @@ services:
 
     # Ports: DO NOT expose externally in production
     # ports:
-    #   - "8081:8080"  # ❌ For debug only, remove in production
+    #   - "8081:8081"  # ❌ For debug only, remove in production
 
     # Ports (not externally exposed, only through nginx)
     expose:
-      - "8080"
+      - "8081"
     
     env_file:
       - env_files/.env.api

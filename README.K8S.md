@@ -139,13 +139,13 @@ helm template <name> helm/postgres --dry-run --debug
 helm install <name> helm/postgres
 
 # Install the chart in a specific namespace
-helm install <name> helm/postgres --namespace <namespace> 
+helm install <name> helm/postgres --namespace <namespace>
 
 # Lists all of the releases for a specified namespace, uses current namespace context if namespace not specified
 helm list
 
 # Uninstalls a release from the current (default) namespace
-help uninstall <name> 
+helm uninstall <name> 
 
 # Uninstalls a release from the specified namespace
 helm uninstall <release-name> --namespace <namespace> 

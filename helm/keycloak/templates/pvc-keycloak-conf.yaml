@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-pvc-keycloak-conf
+spec:
+  accessModes:
+    - {{ .Values.pvc.keycloak.conf.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.pvc.keycloak.conf.size }}

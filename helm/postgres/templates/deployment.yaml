@@ -36,6 +36,16 @@ spec:
                 secretKeyRef:
                   name: {{ .Release.Name }}-db-secret
                   key: POSTGRES_PASSWORD
+            - name: KEYCLOAK_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-db-secret
+                  key: KEYCLOAK_DB_PASSWORD
+            - name: API_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-db-secret
+                  key: API_DB_PASSWORD
           resources:
             requests:
               memory: {{ .Values.container.resources.requests.memory }}
@@ -46,6 +56,9 @@ spec:
           volumeMounts:
             - name: {{ .Release.Name }}-storage
               mountPath: /var/lib/postgresql/data
+            - name: init-scripts
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
           startupProbe:
             exec:
               command:
@@ -83,3 +96,6 @@ spec:
         - name: {{ .Release.Name }}-storage
           persistentVolumeClaim:
             claimName: {{ .Release.Name }}-pvc
+        - name: init-scripts
+          configMap:
+            name: {{ .Release.Name }}-init-scripts

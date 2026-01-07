@@ -14,11 +14,16 @@ spec:
       labels:
         app: people-api
     spec:
+      # enable for local testing without NGINX
+      # hostAliases:
+      # - ip: "10.96.109.210" # ClusterIP of the 'people-keycloak' service
+      #   hostnames:
+      #   - "mcqueide.local"
       containers:
       - name: people-api
         image: mcqueide/people-api:v1.0.1
         ports:
-        - containerPort: 8080
+        - containerPort: 8081
         
         resources:
           requests:
@@ -37,20 +42,20 @@ spec:
         startupProbe:
           httpGet:
             path: /actuator/health
-            port: 8080
+            port: 8081
           failureThreshold: 30
           periodSeconds: 10
 
         readinessProbe:
           httpGet:
             path: /actuator/health
-            port: 8080
+            port: 8081
           periodSeconds: 10
 
         livenessProbe:
           httpGet:
             path: /actuator/health
-            port: 8080
+            port: 8081
           periodSeconds: 20
 
         securityContext:

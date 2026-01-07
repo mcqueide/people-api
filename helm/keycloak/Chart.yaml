@@ -1,0 +1,15 @@
+name: keycloak-deployment
+apiVersion: v2
+version: 0.1.0
+description: A Helm chart for deploying Keycloak on Kubernetes
+type: application
+keywords:
+  - keycloak
+  - identity
+  - kubernetes
+maintainers:
+  - name: John Mc Queide
+    email: mcqueide@gmail.com
+sources:
+  - https://github.com/mcqueide/people-api
+dependencies: []

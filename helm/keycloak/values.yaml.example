@@ -1,0 +1,29 @@
+apiVersion: v1
+pvc:
+  keycloak:
+    lib:
+      accessMode: ReadWriteOnce
+      size: 1Gi
+    conf:
+      accessMode: ReadWriteOnce
+      size: 1Gi
+container:
+  image:
+    repository: quay.io/keycloak/keycloak
+    tag: 26.4
+  storage:
+    size: 1Gi
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "500m"
+      memory: "768Mi"
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  environment:
+    KC_DB_PASSWORD: a2V5Y2xvYWs=
+    KC_BOOTSTRAP_ADMIN_PASSWORD: YWRtaW4=

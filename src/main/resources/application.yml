@@ -52,7 +52,7 @@ cors:
 
 # Server Configuration
 server:
-  port: 8081
+  port: ${SERVER_PORT:8081}
   error:
     include-message: always
     include-binding-errors: always
@@ -98,7 +98,7 @@ spring:
 
 # Server Configuration
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
   forward-headers-strategy: framework
   tomcat:
     remoteip:

@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-keycloak
+  labels:
+    app: {{ .Release.Name }}-keycloak
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-keycloak
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-keycloak
+    spec:
+      containers:
+        - name: keycloak
+          image: {{ .Values.container.image.repository }}:{{ .Values.container.image.tag }}
+          command:
+            - "/opt/keycloak/bin/kc.sh"
+            - "start"
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-keycloak-env
+            - secretRef:
+                name: {{ .Release.Name }}-keycloak-secret
+          resources:
+            requests:
+              memory: {{ .Values.container.resources.requests.memory }}
+              cpu: {{ .Values.container.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.container.resources.limits.memory }}
+              cpu: {{ .Values.container.resources.limits.cpu }}
+          volumeMounts:
+            - name: {{ .Release.Name }}-keycloak-conf
+              mountPath: /opt/keycloak/conf
+            - name: {{ .Release.Name }}-keycloak-lib
+              mountPath: /opt/keycloak/data
+          # startupProbe:
+          #   exec:
+          #     command:
+          #       - sh
+          #       - -c
+          #       - exec 3<>/dev/tcp/keycloak/9000 && echo -e 'GET /auth/health/ready HTTP/1.1\r\nHost: keycloak\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | grep -q '200 OK'"
+          #   failureThreshold: 30
+          #   periodSeconds: 10
+          # readinessProbe:
+          #   exec:
+          #     command:
+          #       - sh
+          #       - -c
+          #       - exec 3<>/dev/tcp/keycloak/9000 && echo -e 'GET /auth/health/ready HTTP/1.1\r\nHost: keycloak\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | grep -q '200 OK'"
+          #   periodSeconds: 10
+          # livenessProbe:
+          #   exec:
+          #     command:
+          #       - sh
+          #       - -c
+          #       - exec 3<>/dev/tcp/keycloak/9000 && echo -e 'GET /auth/health/ready HTTP/1.1\r\nHost: keycloak\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | grep -q '200 OK'"
+          #   periodSeconds: 20
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: {{ .Release.Name }}-keycloak-conf
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-pvc-keycloak-conf
+        - name: {{ .Release.Name }}-keycloak-lib
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-pvc-keycloak-lib
