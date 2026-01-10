@@ -18,11 +18,11 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     permissions:
-      contents: read # Ler o conteúdo do repositório
-      packages: write # Permitir publicar pacotes no GitHub Packages
-      pull-requests: write # Permitir criar e atualizar pull requests
-      security-events: write # Enviar eventos de segurança para o Github Security
-      id-token: write # Permitir emitir tokens OIDC para autenticação com provedores externos
+      contents: read # Read repository contents
+      packages: write # Allow publishing packages to GitHub Packages
+      pull-requests: write # Allow creating and updating pull requests
+      security-events: write # Send security events to GitHub Security
+      id-token: write # Allow issuing OIDC tokens for authentication with external providers
 
     steps:
       - name: Checkout repository
@@ -70,7 +70,7 @@ jobs:
           image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SHA }}
           only-severities: critical,high
           only-fixed: true
-          summary: true # publicar github actions e pull request
+          summary: true # publish to github actions and pull request
           exit-code: true
 
       - name: Analyze for all CVEs
@@ -82,7 +82,7 @@ jobs:
           summary: true
           sarif-file: sarif.output.json
 
-      # Se o repositório for público, é possível testar este recurso, caso contrário somente com organização ativa
+      # If the repository is public, it's possible to test this feature, otherwise only with active organization
       - name: Upload SARIF result
         id: upload-sarif
         if: ${{ github.event_name != 'pull_request' }}
