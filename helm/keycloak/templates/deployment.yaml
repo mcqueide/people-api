@@ -18,7 +18,7 @@ spec:
           image: {{ .Values.container.image.repository }}:{{ .Values.container.image.tag }}
           command:
             - "/opt/keycloak/bin/kc.sh"
-            - "start"
+            - "start-dev"
           ports:
             - containerPort: 8080
           envFrom:

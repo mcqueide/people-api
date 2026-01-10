@@ -6,7 +6,7 @@ spec:
   ingressClassName: nginx
   rules:
   # Add your host here, or use localhost for local testing.
-  - host: mcqueide.local
+  - host: people.mcqueide.com
     http:
       paths:
       - path: /auth
@@ -24,7 +24,7 @@ spec:
             port:
               number: 8081
       - path: /api-docs
-        pathType: Exact
+        pathType: Prefix
         backend:
           service:
             name: people-api

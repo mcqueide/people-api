@@ -320,7 +320,7 @@ services:
   # SPRING-BOOT APPLICATION
   # ==========================================================================
   api:
-    image: mcqueide/people-api:v1.0.1
+    image: mcqueide/people-api:v1.1.0
 
     # Networks: backend
     networks:

@@ -268,7 +268,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: mcqueide/people-api:v1.0.1
+    image: mcqueide/people-api:v1.1.0
 
     # Drop all capabilities (principle of least privilege)
     cap_drop:

@@ -18,10 +18,10 @@ spec:
       # hostAliases:
       # - ip: "10.96.109.210" # ClusterIP of the 'people-keycloak' service
       #   hostnames:
-      #   - "mcqueide.local"
+      #   - "people.mcqueide.com"
       containers:
       - name: people-api
-        image: mcqueide/people-api:v1.0.1
+        image: mcqueide/people-api:v1.1.0
         ports:
         - containerPort: 8081
         

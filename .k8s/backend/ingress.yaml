@@ -11,34 +11,41 @@ spec:
   - host: people.mcqueide.com
     http:
       paths:
+      - path: /auth
+        pathType: Prefix
+        backend:
+          service:
+            name: people-keycloak-keycloak
+            port:
+              number: 8080
       - path: /swagger-ui
         pathType: Prefix
         backend:
           service:
             name: people-api
             port:
-              number: 8080
+              number: 8081
       - path: /api-docs
-        pathType: Exact
+        pathType: Prefix
         backend:
           service:
             name: people-api
             port:
-              number: 8080
+              number: 8081
       - path: /actuator
         pathType: Prefix
         backend:
           service:
             name: people-api
             port:
-              number: 8080
+              number: 8081
       - path: /api
         pathType: Prefix
         backend:
           service:
             name: people-api
             port:
-              number: 8080
+              number: 8081
       - path: /
         pathType: Prefix
         backend:
